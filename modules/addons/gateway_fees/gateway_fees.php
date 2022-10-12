@@ -16,16 +16,24 @@ function gateway_fees_config()
 			"FriendlyName" => $data['gateway'],
 			"Type" => "text",
 			"Default" => "0.00",
-			"max" => "$",  // add a maximum
 			"Description" => "$"
 		);
 		$configarray['fields']["fee_2_" . $data['gateway']] = array(
 			"FriendlyName" => $data['gateway'],
 			"Type" => "text",
 			"Default" => "0.00",
-			"max" => "%", // add a maximum
 			"Description" => "%<br />"
 		);
+		
+		// add a maximum amount to the fee 
+		$configarray['fields']["maxfee_" . $data['gateway']] = array(
+			"FriendlyName" => $data['gateway'],
+			"Type" => "text",
+			"Default" => "0.00",
+			"Description" => "Maximum Fee<br />"
+			
+			
+			
 	}
 
 	return $configarray;
@@ -39,6 +47,8 @@ function gateway_fees_activate()
 		$result2 = mysql_query($query2);
 		$query3 = "insert into `tbladdonmodules` (module,setting,value) value ('gateway_fees','fee_2_" . $data['gateway'] . "','0.00' )";
 		$result3 = mysql_query($query3);
+		$query4 = "insert into `tbladdonmodules` (module,setting,value) value ('gateway_fees','maxfee_" . $data['gateway'] . "','0.00' )";
+		$result4 = mysql_query($query3);
 	}
 }
 
