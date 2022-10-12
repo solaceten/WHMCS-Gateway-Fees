@@ -21,34 +21,44 @@ function update_gateway_fee2($vars)
 {
     $paymentmethod = $vars['paymentmethod'];
     delete_query("tblinvoiceitems", "invoiceid='" . $vars[invoiceid] . "' and notes='gateway_fees'");
-    $result = select_query("tbladdonmodules", "setting,value", "setting='fee_2_" . $vars['paymentmethod'] . "' or setting='fee_1_" . $vars[paymentmethod] . "'");
+    $result = select_query("tbladdonmodules", "setting,value", "setting='fee_2_" . $vars['paymentmethod'] . "' or setting='fee_1_" . $vars[paymentmethod] . "' or setting='maxfee_" . $vars[paymentmethod] . "'");
     while ($data = mysql_fetch_array($result)) {
         $params[$data[0]] = $data[1];
     }
 
     $fee1 = ($params['fee_1_' . $paymentmethod]);
     $fee2 = ($params['fee_2_' . $paymentmethod]);
+    $maxfee = ($params['maxfee_' . $paymentmethod]);
     $total = InvoiceTotal($vars['invoiceid']);
+    
     if ($total > 0) {
         $amountdue = $fee1 + $total * $fee2 / 100;
         if ($fee1 > 0 & $fee2 > 0) {
-            $d = $fee1 . '+' . $fee2 . "%";
+            $newtot = $fee1 . '+' . $fee2 . "%";
         }
         elseif ($fee2 > 0) {
-            $d = $fee2 . "%";
+            $newtot = $fee2 . "%";
         }
         elseif ($fee1 > 0) {
-            $d = $fee1;
+            $newtot = $fee1;
         }
+        
+     // check for maxfee ?
+        // is this enough?
+        if $maxfee > 0 & $newtot > $maxfee {
+               $newtot = $maxfee;
+        }
+        
+        
     }
 
-    if ($d) {
+    if ($newtot) {
         insert_query("tblinvoiceitems", array(
             "userid" => $_SESSION['uid'],
             "invoiceid" => $vars[invoiceid],
             "type" => "Fee",
             "notes" => "gateway_fees",
-            "description" => getGatewayName2($vars['paymentmethod']) . " Fees ($d)",
+            "description" => getGatewayName2($vars['paymentmethod']) . " Fees ($newtot)",
             "amount" => $amountdue,
             "taxed" => "0",
             "duedate" => "now()",
