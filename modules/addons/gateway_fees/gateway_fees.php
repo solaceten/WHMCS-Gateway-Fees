@@ -12,13 +12,15 @@ function gateway_fees_config()
 	);
 	$result = select_query("tblpaymentgateways", "", "", "", "");
 	while ($data = mysql_fetch_array($result)) {
-		$configarray['fields']["fee_1_" . $data['gateway']] = array(
+		
+        $configarray['fields']["fee_1VAL_" . $data['gateway']] = array(
 			"FriendlyName" => $data['gateway'],
 			"Type" => "text",
 			"Default" => "0.00",
 			"Description" => "$"
 		);
-		$configarray['fields']["fee_2_" . $data['gateway']] = array(
+		
+        $configarray['fields']["fee_2PC_" . $data['gateway']] = array(
 			"FriendlyName" => $data['gateway'],
 			"Type" => "text",
 			"Default" => "0.00",
@@ -31,8 +33,9 @@ function gateway_fees_config()
 			"Type" => "text",
 			"Default" => "0.00",
 			"Description" => "Maximum Fee<br />"
+		
+        );	
 			
-		);	
 			
 	}
 
@@ -43,12 +46,15 @@ function gateway_fees_activate()
 {
 	$result = mysql_query('select * from tblpaymentgateways group by gateway');
 	while ($data = mysql_fetch_array($result)) {
-		$query2 = "insert into `tbladdonmodules` (module,setting,value) value ('gateway_fees','fee_1_" . $data['gateway'] . "','0.00' )";
+		
+        $query2 = "insert into `tbladdonmodules` (module,setting,value) value ('gateway_fees','fee_1VAL_" . $data['gateway'] . "','0.00' )";
 		$result2 = mysql_query($query2);
-		$query3 = "insert into `tbladdonmodules` (module,setting,value) value ('gateway_fees','fee_2_" . $data['gateway'] . "','0.00' )";
+        
+		$query3 = "insert into `tbladdonmodules` (module,setting,value) value ('gateway_fees','fee_2PC_" . $data['gateway'] . "','0.00' )";
 		$result3 = mysql_query($query3);
+        
 		$query4 = "insert into `tbladdonmodules` (module,setting,value) value ('gateway_fees','maxfee_" . $data['gateway'] . "','0.00' )";
-		$result4 = mysql_query($query3);
+		$result4 = mysql_query($query4);
 	}
 }
 
