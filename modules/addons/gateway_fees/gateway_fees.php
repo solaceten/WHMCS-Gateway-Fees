@@ -32,7 +32,7 @@ function gateway_fees_config()
 			"Default" => "0.00",
 			"Description" => "Maximum Fee<br />"
 			
-			
+		);	
 			
 	}
 
