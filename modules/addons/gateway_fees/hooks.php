@@ -21,13 +21,13 @@ function update_gateway_fee2($vars)
 {
     $paymentmethod = $vars['paymentmethod'];
     delete_query("tblinvoiceitems", "invoiceid='" . $vars[invoiceid] . "' and notes='gateway_fees'");
-    $result = select_query("tbladdonmodules", "setting,value", "setting='fee_2_" . $vars['paymentmethod'] . "' or setting='fee_1_" . $vars[paymentmethod] . "' or setting='maxfee_" . $vars[paymentmethod] . "'");
+    $result = select_query("tbladdonmodules", "setting,value", "setting='fee_2PC_" . $vars['paymentmethod'] . "' or setting='fee_1VAL_" . $vars[paymentmethod] . "' or setting='maxfee_" . $vars[paymentmethod] . "'");
     while ($data = mysql_fetch_array($result)) {
         $params[$data[0]] = $data[1];
     }
 
-    $fee1 = ($params['fee_1_' . $paymentmethod]);
-    $fee2 = ($params['fee_2_' . $paymentmethod]);
+    $fee1 = ($params['fee_1VAL_' . $paymentmethod]);
+    $fee2 = ($params['fee_2PC_' . $paymentmethod]);
     $maxfee = ($params['maxfee_' . $paymentmethod]);
     $total = InvoiceTotal($vars['invoiceid']);
     
@@ -45,7 +45,7 @@ function update_gateway_fee2($vars)
         
      // check for maxfee ?
         // is this enough?
-        if $maxfee > 0 & $newtot > $maxfee {
+        if (isset($maxfee) & $maxfee > 0 & $newtot > $maxfee) {
                $newtot = $maxfee;
         }
         
