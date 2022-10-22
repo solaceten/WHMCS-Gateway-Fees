@@ -1,166 +1,125 @@
 <?php
 
-function update_gateway_fee3($vars)
-{
-    $id = $vars['invoiceid'];
-    updateInvoiceTotal($id);
+use WHMCS\Session;
+use WHMCS\User\Client;
+use WHMCS\Billing\Invoice;
+use WHMCS\Billing\Currency;
+use WHMCS\Module\GatewaySetting;
+use WHMCS\Billing\Invoice\Item as InvoiceItem;
+use WHMCS\Module\Addon\Setting as AddonSetting;
+
+function invoiceCreatedAdmin($vars) {
+
+    $invoiceId = $vars['invoiceid'];
+
+    updateInvoiceTotal($invoiceId);
+
 }
 
-function update_gateway_fee1($vars)
-{
-    $id = $vars['invoiceid'];
-    $result = select_query("tblinvoices", '', "id='" . $id . "'", "", "");
-    $data = mysql_fetch_array($result);
-    update_gateway_fee2(array(
-        'paymentmethod' => $data['paymentmethod'],
-        "invoiceid" => $data['id']
-    ));
-}
+function invoiceCreated($vars) {
 
-function update_gateway_fee2($vars)
-{
-    $paymentmethod = $vars['paymentmethod'];
-    delete_query("tblinvoiceitems", "invoiceid='" . $vars[invoiceid] . "' and notes='gateway_fees'");
-    $result = select_query("tbladdonmodules", "setting,value", "setting='fee_2_" . $vars['paymentmethod'] . "' or setting='fee_1_" . $vars[paymentmethod] . "'");
-    while ($data = mysql_fetch_array($result)) {
-        $params[$data[0]] = $data[1];
+    $invoiceId = $vars['invoiceid'];
+
+    $invoice = Invoice::where('id', $invoiceId)->first();
+
+    invoiceGatewayChange([
+        'invoiceid'     => $invoice->id,
+        'paymentmethod' => $invoice->paymentmethod,
+    ]);
+
+} 
+
+function invoiceGatewayChange($vars) {
+
+    $invoiceId      = $vars['invoiceid'];
+    $paymentMethod  = $vars['paymentmethod'];
+
+    
+
+    InvoiceItem::where(['invoiceid' => $invoiceId, 'notes' => 'gateway_fees'])->delete();
+
+    $fees = [];
+
+    $gatewayFees = AddonSetting::where('module', "gateway_fees")->get();
+   
+    $taxable = false;
+    $fee1 = $fee2 = $maxFee = 0;
+    
+
+    foreach ($gatewayFees as $fee) {
+        if ($fee->setting == "fixed_fee_{$paymentMethod}") {
+            $fee1 = $fee->value;
+        }
+
+        if ($fee->setting == "percentage_fee_{$paymentMethod}") {
+            $fee2 = $fee->value;
+        }
+
+        if ($fee->setting == "max_fee_{$paymentMethod}") {
+            $maxFee = $fee->value;
+        }
+
+        if ($fee->setting == "enable_tax_{$paymentMethod}") {
+            $taxable = $fee->value;
+        }
+
     }
 
-    $fee1 = ($params['fee_1_' . $paymentmethod]);
-    $fee2 = ($params['fee_2_' . $paymentmethod]);
-    $total = InvoiceTotal($vars['invoiceid']);
+    $invoiceData = localAPI('GetInvoice', ['invoiceid' => $invoiceId]);
+
+    $total = $invoiceData['total'];
+
     if ($total > 0) {
-        $amountdue = $fee1 + $total * $fee2 / 100;
-        if ($fee1 > 0 & $fee2 > 0) {
-            $d = $fee1 . '+' . $fee2 . "%";
+        
+        if ($maxFee != 0 && $maxFee < ($fee1 + $total * $fee2 / 100)) {
+
+            $d          = Currency::defaultCurrency()->first()->prefix . number_format($maxFee, 2);
+            $amountDue  = $maxFee;
+            
+
+        } else {
+
+            $amountDue = $fee1 + $total * $fee2 / 100;
+
+            if ($fee1 > 0 & $fee2 > 0) {
+                $d = Currency::defaultCurrency()->first()->prefix . number_format($fee1, 2) . " + {$fee2}%";
+            } else if ($fee2 > 0) {
+                $d = "{$fee2}%";
+            } else if ($fee1 > 0) {
+                $d = number_format($fee1, 2);
+            }
+        
         }
-        elseif ($fee2 > 0) {
-            $d = $fee2 . "%";
-        }
-        elseif ($fee1 > 0) {
-            $d = $fee1;
-        }
+
     }
 
     if ($d) {
-        insert_query("tblinvoiceitems", array(
-            "userid" => $_SESSION['uid'],
-            "invoiceid" => $vars[invoiceid],
-            "type" => "Fee",
-            "notes" => "gateway_fees",
-            "description" => getGatewayName2($vars['paymentmethod']) . " Fees ($d)",
-            "amount" => $amountdue,
-            "taxed" => "0",
-            "duedate" => "now()",
-            "paymentmethod" => $vars[paymentmethod]
-        ));
+
+        InvoiceItem::insert([
+            'userid'        => Session::get('uid'),
+            'invoiceid'     => $invoiceId,
+            'type'          => 'Fee',
+            'notes'         => 'gateway_fees',
+            'description'   => GatewaySetting::where(['gateway' => $paymentMethod, 'setting' => 'name'])->first()->value . " Fees ({$d})",
+            'amount'        => $amountDue,
+            'taxed'         => $taxable == 'on' ? '1' : '0',
+            'duedate'       => date('Y-m-d H:i:s'),
+            'paymentmethod' => $paymentMethod,
+        ]);
+
     }
 
-    updateInvoiceTotal($vars[invoiceid]);
+    updateInvoiceTotal($invoiceId);
+
 }
 
-add_hook("InvoiceChangeGateway", 1, "update_gateway_fee2");
-add_hook("InvoiceCreated", 1, "update_gateway_fee1");
-add_hook("AdminInvoicesControlsOutput", 2, "update_gateway_fee3");
-add_hook("AdminInvoicesControlsOutput", 1, "update_gateway_fee1");
-add_hook("InvoiceCreationAdminArea", 1, "update_gateway_fee1");
-add_hook("InvoiceCreationAdminArea", 2, "update_gateway_fee3");
+add_hook("InvoiceCreated", 1, "invoiceCreated");
+add_hook("InvoiceChangeGateway", 1, "invoiceGatewayChange");
 
-function InvoiceTotal($id)
-{
-    global $CONFIG;
-    $result = select_query("tblinvoiceitems", "", array(
-        "invoiceid" => $id
-    ));
-    while ($data = mysql_fetch_array($result)) {
-        if ($data['taxed'] == "1") {
-            $taxsubtotal+= $data['amount'];
-        }
-        else {
-            $nontaxsubtotal+= $data['amount'];
-        }
-    }
+add_hook("AdminInvoicesControlsOutput", 1, "invoiceCreated");
+add_hook("AdminInvoicesControlsOutput", 2, "invoiceCreatedAdmin");
 
-    $subtotal = $total = $nontaxsubtotal + $taxsubtotal;
-    $result = select_query("tblinvoices", "userid,credit,taxrate,taxrate2", array(
-        "id" => $id
-    ));
-    $data = mysql_fetch_array($result);
-    $userid = $data['userid'];
-    $credit = $data['credit'];
-    $taxrate = $data['taxrate'];
-    $taxrate2 = $data['taxrate2'];
-    if (!function_exists("getClientsDetails")) {
-        require_once (dirname(__FILE__) . "/clientfunctions.php");
-
-    }
-
-    $clientsdetails = getClientsDetails($userid);
-    $tax = $tax2 = 0;
-    if ($CONFIG['TaxEnabled'] == "on" && !$clientsdetails['taxexempt']) {
-        if ($taxrate != "0.00") {
-            if ($CONFIG['TaxType'] == "Inclusive") {
-                $taxrate = $taxrate / 100 + 1;
-                $calc1 = $taxsubtotal / $taxrate;
-                $tax = $taxsubtotal - $calc1;
-            }
-            else {
-                $taxrate = $taxrate / 100;
-                $tax = $taxsubtotal * $taxrate;
-            }
-        }
-
-        if ($taxrate2 != "0.00") {
-            if ($CONFIG['TaxL2Compound']) {
-                $taxsubtotal+= $tax;
-            }
-
-            if ($CONFIG['TaxType'] == "Inclusive") {
-                $taxrate2 = $taxrate2 / 100 + 1;
-                $calc1 = $taxsubtotal / $taxrate2;
-                $tax2 = $taxsubtotal - $calc1;
-            }
-            else {
-                $taxrate2 = $taxrate2 / 100;
-                $tax2 = $taxsubtotal * $taxrate2;
-            }
-        }
-
-        $tax = round($tax, 2);
-        $tax2 = round($tax2, 2);
-    }
-
-    if ($CONFIG['TaxType'] == "Inclusive") {
-        $subtotal = $subtotal - $tax - $tax2;
-    }
-    else {
-        $total = $subtotal + $tax + $tax2;
-    }
-
-    if (0 < $credit) {
-        if ($total < $credit) {
-            $total = 0;
-            $remainingcredit = $total - $credit;
-        }
-        else {
-            $total-= $credit;
-        }
-    }
-
-    $subtotal = format_as_currency($subtotal);
-    $tax = format_as_currency($tax);
-    $total = format_as_currency($total);
-    return $total;
-}
-
-function getGatewayName2($modulename)
-{
-    $result = select_query("tblpaymentgateways", "value", array(
-        "gateway" => $modulename,
-        "setting" => "name"
-    ));
-    $data = mysql_fetch_array($result);
-    return $data["value"];
-}
+add_hook("InvoiceCreationAdminArea", 1, "invoiceCreated");
+add_hook("InvoiceCreationAdminArea", 2, "invoiceCreatedAdmin");
 
 ?>
