@@ -39,7 +39,14 @@ function gateway_fees_config() {
 			'FriendlyName'	=> $gateway->gateway,
 			'Type'			=> 'text',
 			'Default'		=> '0.00',
-			'Description'	=> 'Maximum Fee<br />',
+			'Description'	=> 'Maximum Fee',
+		];
+
+		$configArray['fields']["enable_tax_{$gateway->gateway}"] = [
+			'FriendlyName' => $gateway->gateway,
+			'Type' => 'yesno',
+			'Default' => '',
+			'Description' => 'Make Fee Taxable<br />',
 		];
 
 	}
