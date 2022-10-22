@@ -8,55 +8,35 @@ use WHMCS\Module\GatewaySetting;
 use WHMCS\Billing\Invoice\Item as InvoiceItem;
 use WHMCS\Module\Addon\Setting as AddonSetting;
 
-function invoiceCreatedAdmin($vars) {
-
-    $invoiceId = $vars['invoiceid'];
-
-    updateInvoiceTotal($invoiceId);
-
-}
-
-function invoiceCreated($vars) {
-
-    $invoiceId = $vars['invoiceid'];
-
-    $invoice = Invoice::where('id', $invoiceId)->first();
-
-    invoiceGatewayChange([
-        'invoiceid'     => $invoice->id,
-        'paymentmethod' => $invoice->paymentmethod,
-    ]);
-
-} 
-
-function invoiceGatewayChange($vars) {
+function gatewayFees($vars) {
 
     $invoiceId      = $vars['invoiceid'];
     $paymentMethod  = $vars['paymentmethod'];
 
-    
-
     InvoiceItem::where(['invoiceid' => $invoiceId, 'notes' => 'gateway_fees'])->delete();
 
-    $fees = [];
+    localAPI('UpdateInvoice', ['invoiceid' => $invoiceId]);
+
+    $fees       = [];
+    $taxable    = false;
+    $fee1       = $fee2 = $maxFee = 0;
 
     $gatewayFees = AddonSetting::where('module', "gateway_fees")->get();
    
-    $taxable = false;
-    $fee1 = $fee2 = $maxFee = 0;
+    
     
 
     foreach ($gatewayFees as $fee) {
         if ($fee->setting == "fixed_fee_{$paymentMethod}") {
-            $fee1 = $fee->value;
+            $fee1 = (float) $fee->value;
         }
 
         if ($fee->setting == "percentage_fee_{$paymentMethod}") {
-            $fee2 = $fee->value;
+            $fee2 = (float) $fee->value;
         }
 
         if ($fee->setting == "max_fee_{$paymentMethod}") {
-            $maxFee = $fee->value;
+            $maxFee = (float) $fee->value;
         }
 
         if ($fee->setting == "enable_tax_{$paymentMethod}") {
@@ -67,7 +47,7 @@ function invoiceGatewayChange($vars) {
 
     $invoiceData = localAPI('GetInvoice', ['invoiceid' => $invoiceId]);
 
-    $total = $invoiceData['total'];
+    $total = $invoiceData['subtotal'];
 
     if ($total > 0) {
         
@@ -109,17 +89,11 @@ function invoiceGatewayChange($vars) {
 
     }
 
-    updateInvoiceTotal($invoiceId);
+    localAPI('UpdateInvoice', ['invoiceid' => $invoiceId]);
 
 }
 
-add_hook("InvoiceCreated", 1, "invoiceCreated");
-add_hook("InvoiceChangeGateway", 1, "invoiceGatewayChange");
-
-add_hook("AdminInvoicesControlsOutput", 1, "invoiceCreated");
-add_hook("AdminInvoicesControlsOutput", 2, "invoiceCreatedAdmin");
-
-add_hook("InvoiceCreationAdminArea", 1, "invoiceCreated");
-add_hook("InvoiceCreationAdminArea", 2, "invoiceCreatedAdmin");
-
-?>
+add_hook("InvoiceCreated", 1, "gatewayFees");
+add_hook("InvoiceChangeGateway", 1, "gatewayFees");
+add_hook("InvoiceCreationAdminArea", 1, "gatewayFees");
+add_hook("AdminInvoicesControlsOutput", 1, "gatewayFees");
