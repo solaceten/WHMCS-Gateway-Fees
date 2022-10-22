@@ -41,8 +41,10 @@ function invoiceGatewayChange($vars) {
     $fees = [];
 
     $gatewayFees = AddonSetting::where('module', "gateway_fees")->get();
-
+   
+    $taxable = false;
     $fee1 = $fee2 = $maxFee = 0;
+    
 
     foreach ($gatewayFees as $fee) {
         if ($fee->setting == "fixed_fee_{$paymentMethod}") {
@@ -56,9 +58,16 @@ function invoiceGatewayChange($vars) {
         if ($fee->setting == "max_fee_{$paymentMethod}") {
             $maxFee = $fee->value;
         }
+
+        if ($fee->setting == "enable_tax_{$paymentMethod}") {
+            $taxable = $fee->value;
+        }
+
     }
 
-    $total = invoiceTotal($invoiceId);
+    $invoiceData = localAPI('GetInvoice', ['invoiceid' => $invoiceId]);
+
+    $total = $invoiceData['total'];
 
     if ($total > 0) {
         
@@ -93,7 +102,7 @@ function invoiceGatewayChange($vars) {
             'notes'         => 'gateway_fees',
             'description'   => GatewaySetting::where(['gateway' => $paymentMethod, 'setting' => 'name'])->first()->value . " Fees ({$d})",
             'amount'        => $amountDue,
-            'taxed'         => '0',
+            'taxed'         => $taxable == 'on' ? '1' : '0',
             'duedate'       => date('Y-m-d H:i:s'),
             'paymentmethod' => $paymentMethod,
         ]);
@@ -112,87 +121,5 @@ add_hook("AdminInvoicesControlsOutput", 2, "invoiceCreatedAdmin");
 
 add_hook("InvoiceCreationAdminArea", 1, "invoiceCreated");
 add_hook("InvoiceCreationAdminArea", 2, "invoiceCreatedAdmin");
-
-function invoiceTotal($invoiceId) {
-    global $CONFIG;
-    $result = select_query("tblinvoiceitems", "", array(
-        "invoiceid" => $id
-    ));
-
-    $items = InvoiceItem::where('invoiceid', $invoiceId)->get();
-
-    foreach ($items as $item) {
-        if ($item->taxed == '1') {
-            $taxSubtotal += $item->amount;
-        } else {
-            $nonTaxSubtotal += $item->amount;
-        }
-    }
-
-    $subTotal = $total = $nonTaxSubtotal + $taxSubtotal;
-
-    $invoice = Invoice::where('id', $invoiceId)->first();
-
-    $userId = $invoice->userid;
-    $credit = $invoice->credit;
-    $taxRate = $invoice->taxrate;
-    $taxRate2 = $invoice->taxrate2;
-
-    $client = Client::where('id', $userId)->first();
-
-    $tax = $tax2 = 0;
-
-    if ($CONFIG['TaxEnabled'] == "on" && !$client->taxexempt) {
-        
-        if ($taxRate != "0.00") {
-            if ($CONFIG['TaxType'] == "Inclusive") {
-                $taxRate    = $taxRate / 100 + 1;
-                $calc1      = $taxSubtotal / $taxRate;
-                $tax        = $taxSubtotal - $calc1;
-            } else {
-                $taxRate    = $taxRate / 100;
-                $tax        = $taxSubtotal * $taxRate;
-            }
-        }
-
-        if ($taxRate2 != "0.00") {
-            if ($CONFIG['TaxL2Compound']) {
-                $taxSubtotal += $tax;
-            }
-
-            if ($CONFIG['TaxType'] == "Inclusive") {
-                $taxRate2   = $taxRate2 / 100 + 1;
-                $calc1      = $taxSubtotal / $taxRate2;
-                $tax2       = $taxSubtotal - $calc1;
-            } else {
-                $taxRate2   = $taxRate2 / 100;
-                $tax2       = $taxSubtotal * $taxRate2;
-            }
-        }
-
-        $tax    = round($tax, 2);
-        $tax2   = round($tax2, 2);
-    }
-
-    if ($CONFIG['TaxType'] == "Inclusive") {
-        $subTotal = $subTotal - $tax - $tax2;
-    } else {
-        $total = $subTotal + $tax + $tax2;
-    }
-
-    if (0 < $credit) {
-        if ($total < $credit) {
-            $total = 0;
-            $remainingCredit = $total - $credit;
-        } else {
-            $total -= $credit;
-        }
-    }
-
-    $total = format_as_currency($total);
-
-    return $total;
-
-}
 
 ?>
