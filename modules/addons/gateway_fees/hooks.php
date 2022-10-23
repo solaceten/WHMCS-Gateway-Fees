@@ -1,5 +1,7 @@
 <?php
 
+// @ v2.5
+
 use WHMCS\Session;
 use WHMCS\User\Client;
 use WHMCS\Billing\Invoice;
