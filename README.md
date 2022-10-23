@@ -1,6 +1,6 @@
 # Gateway Fees Plugin for WHMCS
 
-Version: **1.0.2**
+Version: **2.01**
 
 This is an open-source fork version of the (Original) Gateway Fees plugin for WHMCS, https://github.com/ajarmoszuk/WHMCS-Gateway-Fees (now closed)
 
