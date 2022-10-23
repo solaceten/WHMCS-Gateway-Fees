@@ -13,7 +13,7 @@ function gateway_fees_config() {
 	$configArray = [
 		'name' 			=> 'Gateway Fees for WHMCS',
 		'description' 	=> 'Add fees based on the gateway being used.',
-		'version' 		=> '1.0.2',
+		'version' 		=> '2.5',
 		'author' 		=> 'Open Source',
 	];
 
