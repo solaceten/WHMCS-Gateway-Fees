@@ -24,6 +24,10 @@ This should work for all newly generated invoices.
 
 NO SUPPORT - USE AS IS.  However, if you do come up with an issue, open a thread in WHMCS forums, you might get some help there.
 
-Thanks to Dev @leemahoney3 and tester @solaceten for modernising this and keeping it alive.  If you found it useful, please consider a donation.
+Thanks to Dev @leemahoney3 and tester @solaceten for modernising this and keeping it alive.  
+
+If you found it useful, please consider a donation:
+https://www.buymeacoffee.com/leemahoney3
+https://www.buymeacoffee.com/solaceten
 
 
