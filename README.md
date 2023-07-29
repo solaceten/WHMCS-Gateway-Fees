@@ -15,6 +15,8 @@ Go Cardless Direct Debit facility charges you, the WHMCS owner, 1% for each dire
 
 You can also set the max-fee payable for each gateway - which is useful if you set the fee as a percentage.  In the Go Cardless example, they charge 1% fee to a maximum of $4.  So therefore, you can set the same terms on this module.  Your customer would be charged a 1% convenience fee, and if you set the maximum, at $4 that can be a fair compromise.
 
+Before you use this module on your precious production site - we strongly advise you to install ona development / staging site to test it out.  
+
 To install this addon module, upload the **gateway_fees** directory to **/modules/addons/**.
 
 Go to WHMCS > Setup -> Addon Modules, active and configure. Your activated payment gateways will be shown there. Against each one, you can set fixed fee price $ and/or % per transaction - and also select if you want to add a max fee and if the fee should be taxable.
@@ -22,7 +24,7 @@ Go to WHMCS > Setup -> Addon Modules, active and configure. Your activated payme
 To test it, go to any invoice and change the payment method to one that you have added a fee to.  It should now show the new fee.
 This should work for all newly generated invoices.
 
-NO SUPPORT - USE AS IS.  However, if you do come up with an issue, open a thread in WHMCS forums, you might get some help there.
+NO SUPPORT - USE AS IS.  However, if you do come up with an issue, open a thread in the issues section, or in WHMCS forums, you might get some help there.
 
 Thanks to Dev @leemahoney3 and tester @solaceten for modernising this and keeping it alive.  
 
