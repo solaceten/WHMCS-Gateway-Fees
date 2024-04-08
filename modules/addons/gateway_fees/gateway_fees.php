@@ -1,4 +1,7 @@
 <?php
+// @ https://github.com/solaceten/WHMCS-Gateway-Fees
+// @ v2.5.2
+// @ April 2024
 
 use WHMCS\Billing\Currency;
 use WHMCS\Module\GatewaySetting;
@@ -13,7 +16,7 @@ function gateway_fees_config() {
 	$configArray = [
 		'name' 			=> 'Gateway Fees for WHMCS',
 		'description' 	=> 'Add fees based on the gateway being used.',
-		'version' 		=> '2.5',
+		'version' 		=> '2.5.2',
 		'author' 		=> 'Open Source',
 	];
 

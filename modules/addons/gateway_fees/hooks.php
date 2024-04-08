@@ -1,6 +1,7 @@
 <?php
-
-// @ v2.5.1
+// @ https://github.com/solaceten/WHMCS-Gateway-Fees
+// @ v2.5.2
+// @ April 2024
 
 use WHMCS\Session;
 use WHMCS\User\Client;
@@ -82,7 +83,7 @@ function gatewayFees($vars) {
             'invoiceid'     => $invoiceId,
             'type'          => 'Fee',
             'notes'         => 'gateway_fees',
-            'description'   => GatewaySetting::where(['gateway' => $paymentMethod, 'setting' => 'name'])->first()->value . " Fees ({$d})",
+            'description'   => GatewaySetting::where(['gateway' => $paymentMethod, 'setting' => //'name'])->first()->value . " Fees ({$d})",
             'amount'        => $amountDue,
             'taxed'         => $taxable == 'on' ? '1' : '0',
             'duedate'       => date('Y-m-d H:i:s'),
@@ -95,7 +96,7 @@ function gatewayFees($vars) {
 
 }
 
-add_hook("InvoiceCreation", 1, "gatewayFees");
+add_hook("InvoiceCreation", 1, "gatewayFees"); 
 add_hook("InvoiceChangeGateway", 1, "gatewayFees");
 add_hook("InvoiceCreationAdminArea", 1, "gatewayFees");
 add_hook("AdminInvoicesControlsOutput", 1, "gatewayFees");
