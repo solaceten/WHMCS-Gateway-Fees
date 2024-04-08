@@ -1,5 +1,12 @@
 # Gateway Fees Plugin for WHMCS
 
+Version: **2.5.2**
+April 2024
+
+Merged a bug fix to allow the gateway fee to be applied as soon as the invoice is generated and make compatible with PHP8.1
+Credit: @g00g1
+
+
 Version: **2.5.1**
 Oct23 2022
 
