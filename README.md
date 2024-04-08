@@ -26,14 +26,14 @@ Before you use this module on your precious production site - we strongly advise
 
 To install this addon module, upload the **gateway_fees** directory to **/modules/addons/**.
 
-Go to WHMCS > Setup -> Addon Modules, active and configure. Your activated payment gateways will be shown there. Against each one, you can set fixed fee price $ and/or % per transaction - and also select if you want to add a max fee and if the fee should be taxable.
+Go to your admin WHMCS > Setup -> Addon Modules, active and configure. Your activated payment gateways will be shown there. Against each one, you can set fixed fee price $ and/or % per transaction - and also select if you want to add a max fee and if the fee should be taxable.
 
 To test it, go to any invoice and change the payment method to one that you have added a fee to.  It should now show the new fee.
-This should work for all newly generated invoices.
+This should work for all newly generated invoices too.
 
 NO SUPPORT - USE AS IS.  However, if you do come up with an issue, open a thread in the issues section, or in WHMCS forums, you might get some help there.
 
-Thanks to Dev @leemahoney3 and tester @solaceten for modernising this and keeping it alive.  
+Thanks to Dev @leemahoney3 and tester @solaceten for modernising this and keeping it alive.  Thanks for all who contribute. Keep Code Alive!
 
 If you found it useful, please consider a donation:
 
