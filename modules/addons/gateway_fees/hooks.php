@@ -1,6 +1,6 @@
 <?php
 
-// @ v2.5
+// @ v2.5.1
 
 use WHMCS\Session;
 use WHMCS\User\Client;
@@ -15,6 +15,11 @@ function gatewayFees($vars) {
     $invoiceId      = $vars['invoiceid'];
     $paymentMethod  = $vars['paymentmethod'];
 
+    $invoiceData = localAPI('GetInvoice', ['invoiceid' => $invoiceId]);
+    if ($paymentMethod != $invoiceData['paymentmethod']) {
+        $paymentMethod = $invoiceData['paymentmethod'];
+    }
+
     InvoiceItem::where(['invoiceid' => $invoiceId, 'notes' => 'gateway_fees'])->delete();
 
     localAPI('UpdateInvoice', ['invoiceid' => $invoiceId]);
@@ -24,9 +29,6 @@ function gatewayFees($vars) {
     $fee1       = $fee2 = $maxFee = 0;
 
     $gatewayFees = AddonSetting::where('module', "gateway_fees")->get();
-   
-    
-    
 
     foreach ($gatewayFees as $fee) {
         if ($fee->setting == "fixed_fee_{$paymentMethod}") {
@@ -46,8 +48,6 @@ function gatewayFees($vars) {
         }
 
     }
-
-    $invoiceData = localAPI('GetInvoice', ['invoiceid' => $invoiceId]);
 
     $total = $invoiceData['subtotal'];
 
@@ -95,7 +95,7 @@ function gatewayFees($vars) {
 
 }
 
-add_hook("InvoiceCreated", 1, "gatewayFees");
+add_hook("InvoiceCreation", 1, "gatewayFees");
 add_hook("InvoiceChangeGateway", 1, "gatewayFees");
 add_hook("InvoiceCreationAdminArea", 1, "gatewayFees");
 add_hook("AdminInvoicesControlsOutput", 1, "gatewayFees");
